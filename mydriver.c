@@ -26,7 +26,7 @@
 #define No_Parity 0b00000000
 #define Stop_Bit1 0b00000000
 
-static int major = 0; module_param(major, int, 0);
+static int major = 0; module_param(major, int, 0); // if 0, the major will be set dynamically
 static int nb_dev = 1; module_param(nb_dev, int, 0);
 
 struct mydriver_dev {
@@ -88,6 +88,7 @@ struct file_operations mydriver_fops = {
 static void setup_cdev(struct cdev *m_dev, int minor, struct file_operations *m_fops)
 {
 	int err, dev = MKDEV(major, minor);
+
 	cdev_init(m_dev, m_fops);
 	m_dev->owner = THIS_MODULE;
 	m_dev->ops = m_fops;
@@ -98,6 +99,7 @@ static void setup_cdev(struct cdev *m_dev, int minor, struct file_operations *m_
 
 static int allocate_dev_number(void) {
 	int dev, result;
+
 	if (major) {
 		dev = MKDEV(major, 0);
 		result = register_chrdev_region(dev, nb_dev, "mydriver");
@@ -134,9 +136,10 @@ static int __init mydriver_init(void)
 static void __exit mydriver_exit(void)
 {
 	int dev = MKDEV(major, 0);
+
 	cdev_del(&mydriver_dev.cdev);
 	unregister_chrdev_region(dev, nb_dev);
-	printk ("mydriver: exit\n");
+	printk("mydriver: exit\n");
 	return;
 }
 
