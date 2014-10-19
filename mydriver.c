@@ -1,10 +1,33 @@
+#include <linux/kernel.h>
+#include <asm/uaccess.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/cdev.h>
+#include <asm/io.h>
+
+#define PORT1 0x3F8
+#define PORT2 0x2F8
+
+//IF DLAB
+#define Latch_Low 0x00
+#define Latch_High 0x01
+//ELSE
+#define RW_Buffer 0x00
+#define Interupt 0x01
+
+#define Latch_Low_Max 0x00
+#define Latch_High_Max 0x01
+
+#define LCR 0x03
+
+#define DLAB 0b10000000
+#define Bit8 0b00000011
+#define No_Parity 0b00000000
+#define Stop_Bit1 0b00000000
+
 static int major = 0; module_param(major, int, 0);
 static int nb_dev = 1; module_param(nb_dev, int, 0);
-
 
 struct mydriver_dev {
 	struct cdev cdev;
@@ -19,8 +42,10 @@ static int mydriver_open(struct inode *inode, struct file *filp) {
 }
 
 static ssize_t mydriver_read(struct file *filp, char *buf, size_t count, loff_t *f_pos) {
+	if (count > 12) count = 12;
+	copy_to_user(buf, "Hello World", count);
 	printk("file read\n");
-	return 0;
+	return count;
 }
 
 static ssize_t mydriver_write(struct file *filp, const char *buf, size_t count, loff_t *f_pos) {
@@ -70,11 +95,22 @@ static int allocate_dev_number(void) {
 	return result;
 }
 
-static int __init mydriver_init(void)
-{
+static void setup_port(int port) {
+	outb(0, port + Interupt); /* Turn off interrupts - Port1 */
 	
+	outb(DLAB, port + LCR); /* SET DLAB ON */
+	outb(Latch_Low_Max, port + Latch_Low);
+	outb(Latch_High_Max, port + Latch_High);
+	outb(Bit8 |No_Parity | Stop_Bit1, port + 3); /* AND SET DLAB OFF*/
+	
+	outb(0x01, PORT1 + Interupt); /* Turn interruptes back on */
+}
+
+static int __init mydriver_init(void)
+{	
 	allocate_dev_number();
 	setup_cdev(&mydriver_dev.cdev, 0, &mydriver_fops);
+	setup_port(PORT2);
 	printk("mydriver: init with major=%d nb_dev=%d\n", major, nb_dev);
 	return 0;
 }
