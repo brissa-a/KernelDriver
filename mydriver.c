@@ -28,6 +28,7 @@
 
 static int major = 0; module_param(major, int, 0); // if 0, the major will be set dynamically
 static int nb_dev = 1; module_param(nb_dev, int, 0);
+static int test = 0; module_param(test, int, 0);
 
 struct mydriver_dev {
 	struct cdev cdev;
@@ -44,14 +45,22 @@ static int mydriver_open(struct inode *inode, struct file *filp) {
 static ssize_t mydriver_read(struct file *filp, char *buf, size_t count, loff_t *f_pos) {
 	char byte;
 	int i = 0;
-
+	
+	if (test) {
+		if (count > 12) count = 12;
+		copy_to_user(buf, "Hello World", count);
+		return count;
+	}
 	outb(0, PORT2 + Interupt); /* Turn off interrupts - Port1 */
 	while (i < count) {
+		printk("file read1\n");
 		byte = inb(PORT2 + RW_Buffer);
+		printk("file read2\n");
 		copy_to_user(buf + i, &byte, 1);
+		printk("file read3\n");
 		++i;
 	}
-	printk("file read\n");
+	printk("file read4\n");
 	return count;
 }
 
