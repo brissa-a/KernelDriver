@@ -43,8 +43,9 @@ static int mydriver_open(struct inode *inode, struct file *filp) {
 
 static ssize_t mydriver_read(struct file *filp, char *buf, size_t count, loff_t *f_pos) {
 	char byte;
-
 	int i = 0;
+
+	outb(0, PORT2 + Interupt); /* Turn off interrupts - Port1 */
 	while (i < count) {
 		byte = inb(PORT2 + RW_Buffer);
 		copy_to_user(buf + i, &byte, 1);
@@ -57,6 +58,8 @@ static ssize_t mydriver_read(struct file *filp, char *buf, size_t count, loff_t 
 static ssize_t mydriver_write(struct file *filp, const char *buf, size_t count, loff_t *f_pos) {
 	char byte;
 	int i = 0;
+
+	outb(0x01, PORT2 + Interupt); /* Turn interruptes back on */
 	while (i < count) {
 		copy_from_user(&byte, buf + i, 1);
 		outb(byte, PORT2 + RW_Buffer);
@@ -114,9 +117,9 @@ static void setup_port(int port) {
 	outb(DLAB, port + LCR); /* SET DLAB ON */
 	outb(Latch_Low_Max, port + Latch_Low);
 	outb(Latch_High_Max, port + Latch_High);
-	outb(Bit8 |No_Parity | Stop_Bit1, port + 3); /* AND SET DLAB OFF*/
+	outb(Bit8 |No_Parity | Stop_Bit1, port + LCR); /* AND SET DLAB OFF*/
 	
-	outb(0x01, PORT1 + Interupt); /* Turn interruptes back on */
+	outb(0x01, port + Interupt); /* Turn interruptes back on */
 }
 
 static int __init mydriver_init(void)
