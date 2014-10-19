@@ -26,7 +26,7 @@
 #define No_Parity 0b00000000
 #define Stop_Bit1 0b00000000
 
-static int major = 0; module_param(major, int, 0);
+static int major = 0; module_param(major, int, 0); // if 0, the major will be set dynamically
 static int nb_dev = 1; module_param(nb_dev, int, 0);
 
 struct mydriver_dev {
@@ -133,6 +133,7 @@ static int __init mydriver_init(void)
 static void __exit mydriver_exit(void)
 {
 	int dev = MKDEV(major, 0);
+
 	cdev_del(&mydriver_dev.cdev);
 	unregister_chrdev_region(dev, nb_dev);
 	printk("mydriver: exit\n");
