@@ -42,13 +42,26 @@ static int mydriver_open(struct inode *inode, struct file *filp) {
 }
 
 static ssize_t mydriver_read(struct file *filp, char *buf, size_t count, loff_t *f_pos) {
-	if (count > 12) count = 12;
-	copy_to_user(buf, "Hello World", count);
+	char byte;
+
+	int i = 0;
+	while (i < count) {
+		byte = inb(PORT2 + RW_Buffer);
+		copy_to_user(buf + i, &byte, 1);
+		++i;
+	}
 	printk("file read\n");
 	return count;
 }
 
 static ssize_t mydriver_write(struct file *filp, const char *buf, size_t count, loff_t *f_pos) {
+	char byte;
+	int i = 0;
+	while (i < count) {
+		copy_from_user(&byte, buf, 1);
+		outb(byte, PORT2 + RW_Buffer);
+		++i;
+	}
 	printk("file written\n");
 	return 0;
 }
