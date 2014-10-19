@@ -58,12 +58,12 @@ static ssize_t mydriver_write(struct file *filp, const char *buf, size_t count, 
 	char byte;
 	int i = 0;
 	while (i < count) {
-		copy_from_user(&byte, buf, 1);
+		copy_from_user(&byte, buf + i, 1);
 		outb(byte, PORT2 + RW_Buffer);
 		++i;
 	}
 	printk("file written\n");
-	return 0;
+	return count;
 }
 
 static int mydriver_release(struct inode *inode, struct file *file) {
